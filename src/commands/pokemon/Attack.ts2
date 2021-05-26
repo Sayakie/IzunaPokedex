@@ -1,0 +1,34 @@
+import type { Client } from '@/structures/Client'
+import { PokemonCommand } from '@/structures/Command.Pokemon'
+
+class Pokemon extends PokemonCommand {
+  constructor(client: Client) {
+    super(client)
+
+    this.name = '포켓몬'
+    this.guildOnly()
+    // this.loadAllStats()
+    // this.loadAllDrops()
+  }
+
+  public async run(): Promise<void> {
+    if (
+      this.client.configs.find(guild => guild.id === this.message.guild!.id)
+        ?.pokemonChannelId !== this.message.channel.id
+    )
+      return
+
+    const subcommand = this.argument.asArray.shift()
+    if (subcommand === undefined) return
+
+    switch (subcommand) {
+      case '기술': {
+        const pokemonKeyword = this.argument.asArray[0] === '가라르'
+        break
+      }
+      default: {}
+    }
+  }
+}
+
+export default Pokemon

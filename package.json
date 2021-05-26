@@ -1,0 +1,72 @@
+{
+  "private": true,
+  "name": "riots",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "repository": "git@github.com:Sayakie/Riots.git",
+  "homepage": "https://github.com/Sayakie/Riots#README",
+  "author": "Sayakie <sayakie@kakao.com>",
+  "maintainers": [
+    "Sayakie <sayakie@kakao.com>"
+  ],
+  "bugs": "https://github.com/Sayakie/Riots/issues",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "node": "^12.17.0 || 13.x || 14.x || 15.x || 16.x",
+    "pnpm": "^6"
+  },
+  "devEngines": {
+    "node": ">=14.x",
+    "pnpm": "^6.2.5"
+  },
+  "esm": {
+    "await": true
+  },
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "postinstall": "node scripts/check-dev-engines.mjs package.json && pnpm run install-git-hooks && pnpm run install-prisma",
+    "start": "node -r esm -r sucrase/register/ts -r tsconfig-paths/register src/index.ts",
+    "start:dev": "node -r esm -r sucrase/register/ts -r tsconfig-paths/register src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tidy:data": "node scripts/json-prettier.mjs data/data.json",
+    "install-prisma": "prisma generate",
+    "install-git-hooks": "husky install .githooks"
+  },
+  "dependencies": {
+    "@prisma/client": "^2.23.0",
+    "chalk": "^4.1.1",
+    "deepmerge": "^4.2.2",
+    "discord.js": "^12.5.3",
+    "dotenv": "^9.0.2",
+    "esm": "^3.2.25",
+    "i18next": "^20.2.4",
+    "korean-regexp": "^1.0.9",
+    "node-html-to-image": "^3.1.0",
+    "semver": "^7.3.5",
+    "sharp": "^0.28.2",
+    "sucrase": "^3.18.1",
+    "svg-png-converter": "^0.0.9",
+    "walk-sync": "^2.2.0",
+    "zx": "^1.7.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^12.1.4",
+    "@commitlint/config-conventional": "^12.1.4",
+    "@types/node": "^15.3.0",
+    "@types/sharp": "^0.28.1",
+    "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "@typescript-eslint/parser": "^4.23.0",
+    "eslint": "^7.26.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.2",
+    "eslint-plugin-prettier": "^3.4.0",
+    "husky": "^6.0.0",
+    "lint-staged": "^11.0.0",
+    "prettier": "^2.3.0",
+    "prisma": "^2.23.0",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^4.2.4",
+    "utility-types": "^3.10.0"
+  }
+}
