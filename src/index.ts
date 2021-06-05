@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
-import { RootDirectory, SourceDirectory } from '@/constants/Path'
+import { Events, RootDirectory, SourceDirectory } from '@/constants'
 import { ParseError } from '@/errors/ParseError'
 import { Client } from '@/structures/Client'
 import type { Command } from '@/structures/Command'
@@ -10,17 +9,19 @@ import { Collection } from 'discord.js'
 import type { DotenvConfigOutput } from 'dotenv'
 import { config as dotEnvParse } from 'dotenv'
 import { access } from 'fs/promises'
-import { Events } from './constants'
+
+const { INFO } = Events
 
 // Re-map process environment from environment variable definition like
 // .env, .env.local, .env.development or .env.production. which should
 // be located in the root of the project.
 const { NODE_ENV } = process.env
 
-const nodeEnvFile = NODE_ENV === 'production' ? 'production' : 'development'
+const nodeEnvFile =
+  NODE_ENV === 'production' ? '.env.production' : '.env.development'
 
 await Promise.all(
-  ['.env', '.env.local', `.env.${nodeEnvFile}`].map(
+  ['.env', '.env.local', nodeEnvFile].map(
     async envFile =>
       await access(`${RootDirectory}/${envFile}`)
         .then(() => envFile)
@@ -64,7 +65,7 @@ await Promise.all(
 // Mapping below signals to handle about how terminates DiscordJS Client
 // with in harmony. In the future, We could add more handlers for this signals.
 const signals: ReadonlyArray<NodeJS.Signals> = ['SIGINT', 'SIGHUP']
-const signalHandler = () => {
+const signalHandler = (signal: NodeJS.Signals) => {
   // Error code ref: https://m.blog.naver.com/namhong2001/221488905144
   signals.forEach(signal => process.off(signal, signalHandler))
 
@@ -75,8 +76,13 @@ const signalHandler = () => {
       .filter(Boolean)
       .forEach(cleanup => cleanup())
 
+    void client.$prisma.$disconnect()
+    process.stdout.write('\n\n')
+    client.emit(
+      INFO,
+      `Detected hook: ${chalk.cyan.bold(signal)}\n` + 'Try to destroy...'
+    )
     client.destroy()
-    console.log('destroyed')
     process.exitCode = 0
   } catch (error) {
     if (error instanceof Error) {
@@ -86,7 +92,7 @@ const signalHandler = () => {
     }
   } finally {
     if (process.exitCode || 0 > 0)
-      console.warn('Am I terminating up in harmony...?')
+      console.warn(chalk.yellow('Am I terminating up in harmony...?'))
 
     process.exit()
   }
@@ -96,12 +102,17 @@ signals.forEach(signal => {
   process.once(signal, signalHandler)
 })
 
-// Handle
-// TODO
+// Handle unhandled exceptions or rejection from Promise.
 process.on('uncaughtException', error => {
+  console.log(chalk.red.bold('Uncaught exception occured!'))
   console.error(error)
-  process.exit(1)
 })
+
+// process.on('unhandledRejection', (reason, promise) => {
+//   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+//   console.error(`Unhandled rejection occured at ${promise}: ${reason}`)
+//   process.exit(1)
+// })
 
 // Hooks "beforeExit"
 // Client.db.$on('beforeExit', async () => {
@@ -144,13 +155,13 @@ client.discordEventListeners = listeners
 function attachInterval() {
   attachInterval.timeoutId = setInterval(() => {
     client.emit(
-      Events.INFO,
+      INFO,
       `Serving ${chalk.blueBright(client.users.cache.size)} users ` +
         `from ${chalk.green(client.guilds.cache.size)} guilds.`
     )
   }, 60000)
 }
 
-attachInterval.timeoutId = undefined as NodeJS.Timeout | undefined
+attachInterval.timeoutId = undefined as Nullable<NodeJS.Timeout>
 
 void client.login().then(attachInterval).catch(signalHandler)

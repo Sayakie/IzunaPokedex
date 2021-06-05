@@ -14,6 +14,7 @@ type SpawnConditionTimes = Uppercase<'DAWN' | 'MORNING' | 'NIGHT'>
 type SpawnCondition = {
   times: Array<SpawnConditionTimes>
   stringBiomes: Array<string> // TODO
+  maxY?: number
 }
 
 type RaritySpawnCondition = {

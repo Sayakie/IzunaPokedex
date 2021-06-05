@@ -46,7 +46,7 @@ export interface BaseStats {
   trMoves: Array<number>
   tutorMoves: Array<string>
   eggMoves: Array<string>
-  forms: Record<string, Omit<BaseStats, 'pokemon' | 'form'>>
+  forms: Record<string, BaseStats>
 }
 
 type NullableString = string | null

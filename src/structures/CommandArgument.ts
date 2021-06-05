@@ -44,13 +44,22 @@ export class CommandArgument {
    * @returns {?Channel} The channel that found at clinet channel cache.
    */
   public getChannel(): Channel | undefined {
-    const ResolvableChannel = this.asArray
+    let ResolvableChannel = this.asArray
       .filter(arg => AllowOnlyChannelPattern.test(arg))
       .map(
         channel =>
           AllowOnlyChannelPattern.exec(channel)?.groups as { id: string }
       )
       .shift()
+
+    if (!ResolvableChannel) {
+      const testChannelId = this.asArray.shift()!
+      if (/^\d+$/.test(testChannelId)) {
+        ResolvableChannel = {
+          id: testChannelId
+        }
+      }
+    }
 
     return this.client.channels.cache.find(
       channel => channel.id === ResolvableChannel?.id

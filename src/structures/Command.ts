@@ -1,27 +1,23 @@
+import { Events, Palette } from '@/constants'
 import type { Client } from '@/structures/Client'
 import { CommandArgument } from '@/structures/CommandArgument'
 import type { Message, PermissionString } from 'discord.js'
 import { MessageEmbed } from 'discord.js'
 
-function dummyExecutableCommand() {
-  return {
-    run: () => {
-      /** meow o_O */
-    }
-  } as Command
-}
+const { ERROR } = Events
 
+// Indicate that about command category
 export const enum CommandCatalogue {
   /**
    * Command does not yet catalogued.
    * @default
    */
-  Uncatalogued,
+  Uncatalogued = 0xffff,
 
-  Administrator,
-  Supervisor,
-  Moderator,
-  OwnerOnly
+  Administrator = 0xaa00,
+  Supervisor = 0xab00,
+  Moderator = 0xac00,
+  OwnerOnly = 0xad00
 }
 
 export abstract class Command {
@@ -43,56 +39,61 @@ export abstract class Command {
   /** The list of permission that target user must be had. */
   public userPermissions: PermissionString[]
 
-  /** Allows whether the bot listens message starts with mention bot. */
-  public allowBotMention: boolean
+  /** Allow whether the bot listens message starts with mention bot. */
+  // public allowBotMention: boolean
 
-  /** Represents the client. */
-  public client: Client
+  /** Represent the client. */
+  public readonly client: Client
 
   /**
-   * Represents the Message object. Should be initialized at the inject phase.
+   * Represent the Message object. Should be initialized at the inject phase.
    */
-  protected message!: Message
+  protected readonly message!: Message
 
   /**
-   * Represents the arguments styled with {@link CommandArgument}.
+   * Represent the arguments styled with {@link CommandArgument}.
    * Should be initialized at the inject phase, be wrapped of the object
    * that includes some useful methods to find User, Channel or Role.
    */
-  protected argument!: CommandArgument
-
-  /** */
+  protected readonly argument!: CommandArgument
 
   /**
-   * Indicates that this command is only for the Guild.
+   * Indicate that this command is only for the Guild.
    *
    * @private @type {boolean}
    */
   #isGuilyOnly = false
 
   /**
-   * Indicates that this command is only for the Owner.
+   * Indicate that this command is only for the Owner.
    *
    * @private @type {boolean}
    */
   #isOwnerOnly = false
 
   /**
-   * Indicates that this command is only for the NSFW Channel.
+   * Indicate that this command is only for the NSFW Channel.
    *
    * @private @type {boolean}
    */
   #isNsfwOnly = false
 
   /**
-   * Indicates that this command is hidden.
+   * Indicate that this command is hidden.
    *
    * @private @type {boolean}
    */
   #isHidden = false
 
+  public readonly dummyCommand = (): this =>
+    ({
+      run: () => {
+        /** meow o_O */
+      }
+    } as this)
+
   /**
-   * Represents the command instance.
+   * Represent the command instance.
    *
    * @param {Client} client
    */
@@ -102,30 +103,33 @@ export abstract class Command {
     this.aliases = []
     this.description = 'No description provided.'
     this.catalogue = CommandCatalogue.Uncatalogued
-    this.botPermissions = []
+    this.botPermissions = ['SEND_MESSAGES']
     this.userPermissions = []
-    this.allowBotMention = false
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
     this.run = new Proxy(this.run, {
       apply: async run => {
         await run
           .call(this)
-          .catch(console.error)
+          .then(() => this.message?.channel?.stopTyping?.())
+          .catch(error => this.client.emit(ERROR, error))
           .finally(() => {
-            this.message.channel.stopTyping(true)
-            this.client.setTimeout(
-              () => this.message.channel.stopTyping(true),
-              1667
-            )
+            this.client.setTimeout(() => {
+              // [Button] Interaction does not provided message object sometimes.
+              if (!('message' in this)) return
+
+              // Forcefully stop typing in the channel if still typings.
+              if (this.client.user?.typingIn?.(this.message.channel)) {
+                this.message.channel.stopTyping(true)
+              }
+            }, 1000)
           })
-          .catch(console.error)
       }
     })
   }
 
   /**
-   * Gets whether this command is only for the Guild or not.
+   * Get whether this command is only for the Guild or not.
    *
    * @returns {boolean}
    */
@@ -134,7 +138,7 @@ export abstract class Command {
   }
 
   /**
-   * Gets whether this command is only for the Owner or not.
+   * Get whether this command is only for the Owner or not.
    * Does not indicate that this command can only runs on DM only.
    *
    * @returns {boolean}
@@ -144,7 +148,7 @@ export abstract class Command {
   }
 
   /**
-   * Gets whether this command is only for NSFW channel or not.
+   * Get whether this command is only for NSFW channel or not.
    * Automatically returns false when isGuildOnly is false.
    *
    * @returns {boolean}
@@ -156,7 +160,7 @@ export abstract class Command {
   }
 
   /**
-   * Gets whether this command is hidden or not.
+   * Get whether this command is hidden or not.
    * Never displays on help command when is true.
    *
    * @returns {boolean}
@@ -166,7 +170,7 @@ export abstract class Command {
   }
 
   /**
-   * Makes this command is only for the Guild.
+   * Make this command is only for the Guild.
    *
    * @returns {this}
    */
@@ -177,7 +181,7 @@ export abstract class Command {
   }
 
   /**
-   * Makes this command is only for the Owner.
+   * Make this command is only for the Owner.
    *
    * @returns {this}
    */
@@ -188,7 +192,7 @@ export abstract class Command {
   }
 
   /**
-   * Makes this command is only for NSFW channel.
+   * Make this command is only for NSFW channel.
    *
    * @returns {this}
    */
@@ -199,7 +203,7 @@ export abstract class Command {
   }
 
   /**
-   * Makes this command is hidden at public.
+   * Make this command is hidden at public.
    *
    * @returns {this}
    */
@@ -210,16 +214,22 @@ export abstract class Command {
   }
 
   /**
-   * Injects the {@link Message} object and its arguments.
+   * Inject the {@link Message} object and its arguments.
    *
    * @param {Message} message
    * @param {Array<string>} args
    * @return {this} Returns self
    */
-  public inject(message: Message, args: string[]): Command {
+  public inject(message: Message, args: string[]): this {
+    // @ts-expect-error
     this.message = message
+    // @ts-expect-error
     this.argument = CommandArgument.of(this.client, args)
 
+    // Prevent to execute this command when
+    // * Its for guild only but channel in DM
+    // * Its for owner only but others do
+    // * Its for nsfw channel only but at public
     if (
       (this.isGuildOnly && this.message.channel.type === 'dm') ||
       (this.isOwnerOnly &&
@@ -231,10 +241,48 @@ export abstract class Command {
           this.message.channel.nsfw
         ))
     ) {
-      return dummyExecutableCommand()
+      return this.dummyCommand()
     }
 
-    void this.message.channel.startTyping(1).catch(console.error)
+    // Check if do not have enough permissions in the guild.
+    if (this.message.guild) {
+      const messageEmbed = new MessageEmbed().setColor(Palette.Error)
+
+      if (this.userPermissions.length > 0) {
+        const userMissingPermissions = this.message.guild.members.cache
+          .find(guildMember => guildMember.user === this.message.author)
+          ?.permissionsIn(this.message.channel)
+          .missing(this.userPermissions)
+
+        if (userMissingPermissions?.length ?? 0 > 0) {
+          // void this.message.reply(messageEmbed.setDescription('권한이 없네요!'))
+          return this.dummyCommand()
+        }
+      }
+
+      if (this.botPermissions.length > 0) {
+        const botMissingPermissions = this.message.guild.me
+          ?.permissionsIn(this.message.channel)
+          .missing(this.botPermissions)
+
+        if (botMissingPermissions?.length ?? 0 > 0) {
+          messageEmbed.setDescription(
+            '<:redcross:847302234957807657> Riots가 아래 권한이 없어요.' +
+              `\`\`\`yml\n[ ${botMissingPermissions!.join(', ')} ]\n\`\`\``
+          )
+
+          if (botMissingPermissions?.includes('SEND_MESSAGES'))
+            void this.message.author.send(messageEmbed)
+          else void this.message.reply(messageEmbed)
+
+          return this.dummyCommand()
+        }
+      }
+    }
+
+    void this.message.channel
+      .startTyping(1)
+      .catch(error => this.client.emit(ERROR, error))
 
     return this
   }
@@ -251,7 +299,7 @@ export abstract class Command {
   public async sendFailureMessage(...messages: Array<string>): Promise<void> {
     for await (const message of messages) {
       const embed = new MessageEmbed()
-        .setColor('#F52831')
+        .setColor(Palette.Error)
         .setDescription(message)
 
       await this.message.channel.send(embed)

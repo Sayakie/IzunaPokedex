@@ -108,6 +108,11 @@ export class EnumForm {
     EnumSpecies.Diancie
   ]
 
+  public static MegaXYPokemons = [
+    EnumSpecies.Charizard,
+    EnumSpecies.Mewtwo
+  ]
+
   public static AlolanPokemons = [
     EnumSpecies.Diglett,
     EnumSpecies.Dugtrio,

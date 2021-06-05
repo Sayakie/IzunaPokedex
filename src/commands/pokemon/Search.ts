@@ -19,7 +19,7 @@ class PokemonSearch extends PokemonCommand {
   constructor(client: Client) {
     super(client)
 
-    this.name = '포켓몬검색'
+    this.name = '$$포켓몬검색'
     this.botPermissions = ['SEND_MESSAGES', 'ATTACH_FILES', 'EMBED_LINKS']
     this.guildOnly()
   }
@@ -151,7 +151,7 @@ class PokemonSearch extends PokemonCommand {
         .map(stat => this.padStart(stat))
         .join(' ')
       const totalStats = this.padStart(
-        (Object.values(pokemonBaseStats.stats) as Array<number>).reduce(
+        Object.values(pokemonBaseStats.stats).reduce(
           (prev, cur) => prev + cur,
           0
         ),
@@ -169,7 +169,7 @@ class PokemonSearch extends PokemonCommand {
           ]
             .filter(Boolean)
             .map(String)
-            .map(item => (item = item.replace(/^.*:/, '')))
+            .map(item => (item = item.replace(/^\w*(?=:)./, '')))
             .map(
               item =>
                 data[`item.${item}.name`] ??

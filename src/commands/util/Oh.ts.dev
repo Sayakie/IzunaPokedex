@@ -32,7 +32,13 @@ class Oh extends Command {
       .setDescription(`<@${this.message.author.id}>, **Bump**!`)
       .setImage('attachment://Pokemon.png')
 
-    await this.message.channel.send(embed)
+    const btn = new this.client.test.MessageButton()
+      .setLabel('테스트')
+      .setStyle('blurple')
+      .setID('test')
+
+    // await this.message.channel.send(embed)
+    await this.message.channel.send('hh', btn)
   }
 }
 

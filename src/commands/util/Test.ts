@@ -7,7 +7,7 @@ class Test extends Command {
   constructor(client: Client) {
     super(client)
 
-    this.name = 'bump'
+    this.name = '$$bump123'
   }
 
   public async run(): Promise<void> {

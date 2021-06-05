@@ -1,4 +1,3 @@
-import type { BaseStats } from '@/constants/BaseStats'
 import { EnumSpecies } from '@/constants/enums/EnumSpecies'
 import { RootDirectory } from '@/constants/Path'
 import { Utils } from '@/utils'
@@ -26,7 +25,7 @@ export interface SpawnSet {
 }
 
 export interface SpawnInfo {
-  spec: { name: string }
+  spec: { name: string; form?: number }
   stringLocationTypes: Array<'Grass'>
   minLevel: number
   maxLevel: number

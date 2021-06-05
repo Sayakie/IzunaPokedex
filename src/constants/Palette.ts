@@ -53,6 +53,7 @@ const Palette = {
 
 // prettier-ignore
 const ExtraPalette = {
+  ErrorLike:          '#F5605C',
   Error:              '#F52831'
 } as const
 

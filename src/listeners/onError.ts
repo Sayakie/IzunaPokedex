@@ -9,24 +9,30 @@ const { ERROR, DEBUG, WARN, INFO } = Events
 
 export default (client: Client): ReturnType<Listener> => {
   function onInfo(message: string) {
-    console.info(chalk.green.bold('[INFO]'), message)
+    console.info(chalk.green.bold.inverse('[INFO]'), message)
   }
 
   function onWarn(message: string) {
-    console.warn(chalk.yellowBright.bold('[WARN]'), message)
+    console.warn(chalk.yellowBright.bold.inverse('[WARN]'), message)
   }
 
   function onDebug(message: string) {
-    if (NODE_ENV !== 'production') return
+    // if (NODE_ENV !== 'production') return
 
-    console.debug(chalk.greenBright.bold('[DEBUG]'), message)
+    console.debug(chalk.greenBright.bold.inverse('[DEBUG]'), message)
   }
 
   function onError(error: Error) {
-    console.error(chalk.red.bold(`[ERROR] ${error.name}`), error.message)
+    console.error(
+      chalk.red.bold.inverse(
+        '[ERROR]',
+        chalk.redBright(error.name),
+        error.message
+      )
+    )
   }
 
-  client.incrementMaxListener(3)
+  client.incrementMaxListener(4)
   client.on(ERROR, onError)
   client.on(DEBUG, onDebug)
   client.on(WARN, onWarn)
@@ -37,6 +43,6 @@ export default (client: Client): ReturnType<Listener> => {
     client.off(DEBUG, onDebug)
     client.off(WARN, onWarn)
     client.off(INFO, onInfo)
-    client.decrementMaxListener(3)
+    client.decrementMaxListener(4)
   }
 }

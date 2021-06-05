@@ -4,35 +4,74 @@ import { EnumForm } from '@/constants/enums/EnumForm'
 import { EnumSpecies } from '@/constants/enums/EnumSpecies'
 import { PokemonManager } from '@/managers/PokemonManager'
 import type { Client } from '@/structures/Client'
-import type { GuildConfiguration } from '@/structures/GuildConfiguration'
 import type { Listener } from '@/utils'
 import type { Message } from 'discord.js'
 import { MessageEmbed } from 'discord.js'
 
-const { CLIENT_READY, MESSAGE_CREATE, INFO } = Events
+const { CLIENT_READY, MESSAGE_CREATE, INFO, ERROR } = Events
 
 export default (client: Client): ReturnType<Listener> => {
   async function onReady() {
     client.emit(INFO, `Logged in as ${client.user!.tag}`)
+    client.emit(
+      INFO,
+      `Registered ${client.commands.size} commands and listening ${client.discordEventListeners.size} events.`
+    )
 
-    await PokemonManager.loadAllStats()
-    await PokemonManager.loadAllDrops()
-    await PokemonManager.loadAllSpawners()
+    await client.$prisma
+      .$connect()
+      .then(() =>
+        client.user?.setPresence({
+          status: 'idle',
+          activities: [{ type: 'LISTENING', name: '포켓몬 도감 준비 중...' }]
+        })
+      )
+      .then(async () => await PokemonManager.loadAllStats())
+      .then(async () => await PokemonManager.loadAllDrops())
+      .then(async () => await PokemonManager.loadAllSpawners())
+      .then(() => {
+        for (const species of EnumSpecies.Pokemons)
+          EnumForm.formList.set(species, EnumForm.Forms.Normal)
+        for (const genderSpecies of EnumForm.GenderPokemons) {
+          EnumForm.formList.set(genderSpecies, EnumForm.Forms.Gender.Male)
+          EnumForm.formList.set(genderSpecies, EnumForm.Forms.Gender.Female)
+        }
+        for (const megaSpecies of EnumForm.MegaPokemons)
+          EnumForm.formList.set(megaSpecies, EnumForm.Forms.Mega)
+        for (const alolanSpecies of EnumForm.AlolanPokemons)
+          EnumForm.formList.set(alolanSpecies, EnumForm.Forms.Alolan)
+        for (const galarianSpecies of EnumForm.GalarianPokemons)
+          EnumForm.formList.set(galarianSpecies, EnumForm.Forms.Galarian)
+      })
+      // .then(async () => {
+      //   const guildDataSet =
+      //     (await client.$prisma.guild.findMany({
+      //       select: { id: true }
+      //     })) || []
+      //   const guildIds = client.guilds.cache.map(({ id }) => id)
 
-    // const b: UnionToIntersection<typeof EnumForm.Forms>
-    // b.Alolan
-    for (const species of EnumSpecies.Pokemons)
-      EnumForm.formList.set(species, EnumForm.Forms.Normal)
-    for (const genderSpecies of EnumForm.GenderPokemons) {
-      EnumForm.formList.set(genderSpecies, EnumForm.Forms.Gender.Male)
-      EnumForm.formList.set(genderSpecies, EnumForm.Forms.Gender.Female)
-    }
-    for (const megaSpecies of EnumForm.MegaPokemons)
-      EnumForm.formList.set(megaSpecies, EnumForm.Forms.Mega)
-    for (const alolanSpecies of EnumForm.AlolanPokemons)
-      EnumForm.formList.set(alolanSpecies, EnumForm.Forms.Alolan)
-    for (const galarianSpecies of EnumForm.GalarianPokemons)
-      EnumForm.formList.set(galarianSpecies, EnumForm.Forms.Galarian)
+      //   try {
+      //     guildIds
+      //       .filter(id => guildDataSet.every(guild => guild.id !== id))
+      //       .forEach(async id => {
+      //         await client.$prisma.guild.create({ data: { id } })
+
+      //         client.emit(INFO, `Created dataset for <Guild ${id}>`)
+      //       })
+      //   } catch (error) {
+      //     client.emit(ERROR, error)
+      //     process.exit(1)
+      //   }
+      // })
+      .then(() =>
+        client.user?.setPresence({
+          status: 'online',
+          activities: [{ type: 'LISTENING', name: `Riots@v${client.version}` }]
+        })
+      )
+      .catch(error => client.emit(ERROR, error))
+
+    client.$prisma.$queryRaw`SELECT * FROM Guild`
   }
 
   async function handleMessage(message: Message) {
@@ -45,26 +84,31 @@ export default (client: Client): ReturnType<Listener> => {
     // Abort if is me
     if (message.author.equals(client.user!)) return
 
-    const guildConfig = message.guild
-      ? client.configs.find(({ id }) => id === message.guild?.id)
-      : ({ commandInvokeToken: '/', ignoreTheBot: true } as GuildConfiguration)
-
     // Abort if the guild configuration tell us ignore the bot
-    if (guildConfig?.ignoreTheBot && message.author.bot) return
+    if (message.author.bot) return
+
+    // const guildConfig = message.guild
+    //   ? await Client.$prisma.guild.findUnique({
+    //       where: { id: message.guild.id },
+    //       select: { commandInvokeToken: true }
+    //     })
+    //   : ({ commandInvokeToken: '!' } as GuildConfiguration)
+    const guildConfig = { commandInvokeToken: '!' }
 
     // Abort if the message invoke token is invalid
     if (
-      !message.cleanContent.startsWith(guildConfig?.commandInvokeToken ?? '/')
+      !message.cleanContent.startsWith(guildConfig?.commandInvokeToken ?? '!')
+      // &&
+      // !message.content.startsWith(`<@!${client.user!.id}>`)
     )
       return
 
     const CommandArguments = message.content
-      .toLowerCase()
       .substring(guildConfig?.commandInvokeToken?.length ?? 1)
       .trim()
       .split(/"((?:""|[^"])*)"|\s+/g)
       .filter(v => Boolean(v))
-    const CommandToken = CommandArguments.shift()
+    const CommandToken = CommandArguments.shift()?.toLowerCase()
 
     if (CommandToken === undefined) return
 
@@ -82,6 +126,7 @@ export default (client: Client): ReturnType<Listener> => {
       await command.inject(message, CommandArguments).run()
     } catch (error) {
       const embed = new MessageEmbed()
+
       if (error instanceof Error) {
         embed.setColor(Palette.Error)
         if (error.message.length > 1900)
