@@ -26,7 +26,7 @@ declare module '@riots/global' {
       canFly: boolean
       canSurf: boolean
       preEvolutions: readonly Array<string>
-      experienceGroup?: readonly Array<ExperienceGroup>
+      experienceGroup?: ExperienceGroup
       aggresion?: {
         timid: number
         passive: number

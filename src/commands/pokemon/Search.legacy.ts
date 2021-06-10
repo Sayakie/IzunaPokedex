@@ -19,7 +19,7 @@ class PokemonSearch extends PokemonCommand {
   constructor(client: Client) {
     super(client)
 
-    this.name = '$$포켓몬검색'
+    this.name = '$$포켓몬검색$$'
     this.botPermissions = ['SEND_MESSAGES', 'ATTACH_FILES', 'EMBED_LINKS']
     this.guildOnly()
   }

@@ -4,7 +4,6 @@ import type { Client } from '@/structures/Client'
 import type { Listener } from '@/utils'
 import chalk from 'chalk'
 
-const { NODE_ENV } = process.env
 const { ERROR, DEBUG, WARN, INFO } = Events
 
 export default (client: Client): ReturnType<Listener> => {
@@ -24,11 +23,9 @@ export default (client: Client): ReturnType<Listener> => {
 
   function onError(error: Error) {
     console.error(
-      chalk.red.bold.inverse(
-        '[ERROR]',
-        chalk.redBright(error.name),
-        error.message
-      )
+      chalk.red.bold.inverse('[ERROR]', chalk.redBright(error.name)),
+      error.message,
+      error.stack ? `\n` + error.stack : ''
     )
   }
 

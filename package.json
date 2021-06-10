@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "riots",
-  "version": "0.2.3",
+  "version": "0.2.14",
   "description": "",
   "main": "index.js",
   "repository": "git@github.com:Sayakie/Riots",
@@ -39,7 +39,7 @@
     "@prisma/client": "^2.23.0",
     "chalk": "^4.1.1",
     "deepmerge": "^4.2.2",
-    "discord-buttons": "^2.4.1",
+    "discord-buttons": "^3",
     "discord.js": "github:discordjs/discord.js#cbd7f2b9aa44a9240947ed716d0e72257ac499f7",
     "dotenv": "^9.0.2",
     "esm": "^3.2.25",

@@ -307,6 +307,8 @@ export abstract class Command {
   }
 
   public toString(): string {
-    return `Command {${this.constructor.name} - ${this.description}}`
+    return `Command {${this.name ?? this.constructor.name} - ${
+      this.description
+    }}`
   }
 }

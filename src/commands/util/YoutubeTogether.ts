@@ -2,7 +2,7 @@ import type { Client } from '@/structures/Client'
 import { Command } from '@/structures/Command'
 import fetch from 'node-fetch'
 
-class Test extends Command {
+class YoutubeTogether extends Command {
   constructor(client: Client) {
     super(client)
 
@@ -73,4 +73,4 @@ class Test extends Command {
   }
 }
 
-export default Test
+export default YoutubeTogether

@@ -5,15 +5,21 @@ import { PokemonManager } from '@/managers/PokemonManager'
 import type { Client } from '@/structures/Client'
 import { Command } from '@/structures/Command'
 import data from 'data.json'
-import { MessageButton } from 'discord-buttons'
 import type { Message, TextChannel } from 'discord.js'
-import { MessageEmbed } from 'discord.js'
+import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js'
 import { getRegExp } from 'korean-regexp'
+
+export type resolvableForm =
+  | 'MEGA'
+  | `MEGA-${'X' | 'Y'}`
+  | 'ALOLA'
+  | 'GALAR'
+  | 'ASH'
 
 export interface PokemonProvider {
   name: string
   form: number
-  formName?: string
+  formName?: resolvableForm
   species: EnumSpecies
   etc?: Partial<{
     showForm: boolean
@@ -33,9 +39,7 @@ class PokemonSearchDev extends Command {
     this.guildOnly()
   }
 
-  private resolveFormName(
-    resolvableFormName: 'MEGA' | `MEGA-${'X' | 'Y'}` | 'ALOLA' | 'GALAR'
-  ) {
+  private resolveFormName(resolvableFormName: resolvableForm) {
     switch (resolvableFormName) {
       case 'MEGA':
         return '메가'
@@ -47,6 +51,8 @@ class PokemonSearchDev extends Command {
         return '알로라'
       case 'GALAR':
         return '가라르'
+      case 'ASH':
+        return '지우'
       default:
         return ''
     }
@@ -296,7 +302,10 @@ class PokemonSearchDev extends Command {
     if (spawnTowns.size === 0) spawnTowns.add('출몰 정보 없음')
 
     // ########## Stats ##########
-    const stats = Object.values(baseStats?.stats || {})
+    const { HP, Attack, Defence, SpecialAttack, SpecialDefence, Speed } =
+      baseStats?.stats || {}
+
+    const stats = [HP, Attack, Defence, SpecialAttack, SpecialDefence, Speed]
       .map(stat => String(stat).padStart(3))
       .join(' ')
     const totalStats = String(
@@ -367,12 +376,12 @@ class PokemonSearchDev extends Command {
       )
       .addField(
         ':hatching_chick: 부화 걸음 수',
-        ((baseStats?.eggCycles || NaN) + 1) * 255 || '정보 없음',
+        String(((baseStats?.eggCycles || NaN) + 1) * 255) || '정보 없음',
         true
       )
       .addField(
         ':crystal_ball: 포획률',
-        baseStats?.catchRate ?? '정보 없음',
+        String(baseStats?.catchRate) ?? '정보 없음',
         true
       )
       .addField(
@@ -385,68 +394,96 @@ class PokemonSearchDev extends Command {
         spawnBiomes?.join(', ') ?? '출몰 정보 없음',
         isInlineEmbededBlock
       )
-      .addField(
+
+    if (this.message.guild?.id === '471737560524390420')
+      messageEmbed.addField(
         ':house_with_garden: 출몰 마을',
         Array.from(spawnTowns).join(', ') ?? '출몰 정보 없음',
         isInlineEmbededBlock
       )
-      .addField(
-        ':hibiscus: 종족치',
-        '```ahk\n' +
-          `+-------------------------+-------+\n` +
-          `|  HP Atk Def SpA SpD Spe | Total |\n` +
-          `+-------------------------+-------+\n` +
-          `| ${stats} | ${totalStats}  |\n` +
-          `+-------------------------+-------+\n` +
-          '\n```'
-      )
+    else if (isInlineEmbededBlock)
+      messageEmbed.addField('\u200b', '\u200b', true)
 
-    const buttons = [] as Array<MessageButton>
+    messageEmbed.addField(
+      ':hibiscus: 종족치',
+      '```ahk\n' +
+        `+-------------------------+-------+\n` +
+        `|  HP Atk Def SpA SpD Spe | Total |\n` +
+        `+-------------------------+-------+\n` +
+        `| ${stats} | ${totalStats}  |\n` +
+        `+-------------------------+-------+\n` +
+        '\n```'
+    )
+
+    const component = new MessageActionRow()
+    const components = [component]
+
     if (this.provider.etc?.showForm) {
       if (EnumForm.MegaPokemons.includes(this.provider.species))
-        buttons.push(
+        component.addComponents([
           new MessageButton()
-            .setStyle('blurple')
+            .setStyle('PRIMARY')
             .setLabel('메가폼')
-            .setID(`FORM:${this.provider.species.name.toUpperCase()}:1:MEGA`)
-        )
+            .setCustomID(
+              `FORM:${this.provider.species.name.toUpperCase()}:1:MEGA`
+            )
+        ])
 
       if (EnumForm.MegaXYPokemons.includes(this.provider.species))
-        buttons.push(
+        component.addComponents([
           new MessageButton()
-            .setStyle('blurple')
+            .setStyle('PRIMARY')
             .setLabel('메가 X폼')
-            .setID(`FORM:${this.provider.species.name.toUpperCase()}:1:MEGA-X`),
+            .setCustomID(
+              `FORM:${this.provider.species.name.toUpperCase()}:1:MEGA-X`
+            ),
           new MessageButton()
-            .setStyle('blurple')
+            .setStyle('PRIMARY')
             .setLabel('메가 Y폼')
-            .setID(`FORM:${this.provider.species.name.toUpperCase()}:2:MEGA-Y`)
-        )
+            .setCustomID(
+              `FORM:${this.provider.species.name.toUpperCase()}:2:MEGA-Y`
+            )
+        ])
 
       if (EnumForm.AlolanPokemons.includes(this.provider.species))
-        buttons.push(
+        component.addComponents([
           new MessageButton()
-            .setStyle('green')
+            .setStyle('SUCCESS')
             .setLabel('알로라폼')
-            .setID(`FORM:${this.provider.species.name.toUpperCase()}:1:ALOLA`)
-        )
+            .setCustomID(
+              `FORM:${this.provider.species.name.toUpperCase()}:1:ALOLA`
+            )
+        ])
 
       if (EnumForm.GalarianPokemons.includes(this.provider.species))
-        buttons.push(
+        component.addComponents([
           new MessageButton()
-            .setStyle('green')
+            .setStyle('SUCCESS')
             .setLabel('가라르폼')
-            .setID(`FORM:${this.provider.species.name.toUpperCase()}:2:GALAR`)
-        )
+            .setCustomID(
+              `FORM:${this.provider.species.name.toUpperCase()}:2:GALAR`
+            )
+        ])
+
+      if (this.provider.species.getLocalizedName() === '개굴닌자')
+        component.addComponents([
+          new MessageButton()
+            .setStyle('SUCCESS')
+            .setLabel('지우개굴닌자')
+            .setCustomID(
+              `FORM:${this.provider.species.name.toUpperCase()}:2:ASH`
+            )
+        ])
     }
+
     if (hasDroppableItems)
-      buttons.push(
+      component.addComponents([
         new MessageButton()
-          .setStyle('red')
+          .setStyle('DANGER')
           .setLabel('파밍 아이템')
-          .setID(`DROPITEM:${this.provider.species.name.toLowerCase()}`)
+          .setCustomID(`DROPITEM:${this.provider.species.name.toLowerCase()}`)
           .setDisabled(true)
-      )
+      ])
 
     if (shouldHintAboutHiddenAbility)
       messageEmbed.setFooter('*는 숨겨진 특성을 지표해요.')
@@ -474,8 +511,7 @@ class PokemonSearchDev extends Command {
       //   'https://teamblank.kr/poke/sprites/pokemon/' +
       //     `${this.provider.species.getNationalPokedexNumber()}.png`
       // )
-      // @ts-expect-error
-      buttons
+      components
     })
   }
 }

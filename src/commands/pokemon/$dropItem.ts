@@ -14,7 +14,7 @@ class $DropItem extends Command {
   constructor(client: Client) {
     super(client)
 
-    this.name = '$$DROPITEM$$'
+    this.name = '__DROPITEM__'
     this.botPermissions = ['SEND_MESSAGES', 'EMBED_LINKS']
     this.userPermissions = ['ADMINISTRATOR']
     this.nsfwOnly()

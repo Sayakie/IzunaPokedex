@@ -3,7 +3,6 @@ import { RootDirectory } from '@/constants/Path'
 import type { GuildConfiguration } from '@/structures/GuildConfiguration'
 import type { Listener } from '@/utils'
 import { PrismaClient } from '@prisma/client'
-import buttonWrapper from 'discord-buttons'
 import type { ClientOptions } from 'discord.js'
 import { Client as DiscordJSClient, Collection, Intents } from 'discord.js'
 import type { Command } from './Command'
@@ -78,7 +77,7 @@ export class Client extends DiscordJSClient {
     //   await next(params)
     // })
 
-    buttonWrapper(this)
+    // buttonWrapper(this)
   }
 
   public readonly $prisma: PrismaClient
