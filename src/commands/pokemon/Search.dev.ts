@@ -7,7 +7,7 @@ import { Command } from '@/structures/Command'
 import data from 'data.json'
 import type { Message, TextChannel, User } from 'discord.js'
 import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js'
-import { getRegExp } from 'korean-regexp'
+import { getPhonemes, getRegExp } from 'korean-regexp'
 
 export type resolvableForm =
   | 'MEGA'
@@ -102,7 +102,9 @@ class PokemonSearchDev extends Command {
     const hasPokemon = EnumSpecies.hasPokemon(this.provider.name)
     if (hasPokemon === false) {
       const messageEmbed = new MessageEmbed()
-      const relatedMatches = EnumSpecies.PokemonsLocalized.flat().filter(
+      const flattenLocalizedPokemons = EnumSpecies.PokemonsLocalized.flat()
+
+      let relatedMatches = flattenLocalizedPokemons.filter(
         pokemon =>
           getRegExp(this.provider.name.toLowerCase(), {
             initialSearch: true,
@@ -112,6 +114,24 @@ class PokemonSearchDev extends Command {
             fuzzy: true
           }).test(pokemon.toLowerCase())
       )
+
+      if (relatedMatches.length === 0) {
+        const relatedMatchKeyword = this.provider.name
+          .toLowerCase()
+          .split('')
+          .map(keyword => getPhonemes(keyword).initial)
+          .join('')
+
+        relatedMatches = flattenLocalizedPokemons.filter(
+          pokemon => getRegExp(relatedMatchKeyword, {
+            initialSearch: true,
+            ignoreSpace: true,
+            ignoreCase: true,
+            global: true,
+            fuzzy: true
+          }).test(pokemon.toLowerCase())
+        )
+      }
 
       // Found related about the pokemon...?
       if (relatedMatches.length > 0)
@@ -128,6 +148,7 @@ class PokemonSearchDev extends Command {
         messageEmbed
           .setColor(Palette.Error)
           .setDescription(':loudspeaker: 찾은 포켓몬이 없네요!')
+
 
       await this.message.reply(messageEmbed)
       return
@@ -560,13 +581,12 @@ class PokemonSearchDev extends Command {
       )
     }
 
-    console.log(messageEmbed.toJSON())
     let target: Message
     if (this.message.reference?.messageID)
       target = await this.message.channel.messages.fetch(this.message.reference.messageID)
     else target = this.message
 
-    await target.reply(null, {
+    await target.channel.send(null, {
       embed: messageEmbed,
       // .setThumbnail(
       //   'https://teamblank.kr/poke/sprites/pokemon/' +
