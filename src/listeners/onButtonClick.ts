@@ -66,13 +66,13 @@ export default (client: Client): ReturnType<Listener> => {
                 ({ name }) => name === '포켓몬'
               )! as PokemonSearchDevCommand
             )
-              .inject(interaction.message as Message, [name])
+              .inject(interaction.message as Message, [name!])
               .provide({
                 name: String(name),
                 form: Number(form),
                 formName: String(formName) as resolvableForm,
                 species: null as unknown as EnumSpecies,
-                etc: { showForm: false, isButton: true }
+                etc: { showForm: false, isButton: true, requester: interaction.user }
               })
               .run()
         )
@@ -86,7 +86,7 @@ export default (client: Client): ReturnType<Listener> => {
               ({ name }) => name === '__DROPITEM__'
             ) as PokemonDropItemCommand
           )
-            ?.inject?.(interaction.message as Message, [name])
+            ?.inject?.(interaction.message as Message, [name!])
             ?.provide?.({
               name: String(name),
               form: 0,

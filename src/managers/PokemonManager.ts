@@ -38,6 +38,14 @@ export interface SpawnInfo {
 export interface SpawnCondition {
   times: Array<'DAY' | 'NIGHT'>
   stringBiomes: Array<string>
+  minX?: number
+  minY?: number
+  minZ?: number
+  maxX?: number
+  maxY?: number
+  maxZ?: number
+  seesSky?: number
+  weathers?: Array<Capitalize<'CLEAR' | 'RAIN' | 'STORM'>>
 }
 
 export type HeldItem = { itemID: string; percentChance: number }
@@ -45,8 +53,8 @@ export type HeldItem = { itemID: string; percentChance: number }
 export interface GlobalCompositeCondition {
   condition: Array<{
     dimentions?:
-      | Array<number>
-      | { tag: 'ultrabeast' | 'legendary'; requiredSpace: number }
+    | Array<number>
+    | { tag: 'ultrabeast' | 'legendary'; requiredSpace: number }
   }>
   anticonditions: Array<unknown>
 }
@@ -124,7 +132,7 @@ export class PokemonManager {
         continue
       }
 
-      ;(PokemonManager.Spawners as Map<string, Array<SpawnInfo>>).set(
+      ; (PokemonManager.Spawners as Map<string, Array<SpawnInfo>>).set(
         spawnSet.id,
         spawnSet.spawnInfos
       )

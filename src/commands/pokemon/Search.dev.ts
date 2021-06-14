@@ -5,7 +5,7 @@ import { PokemonManager } from '@/managers/PokemonManager'
 import type { Client } from '@/structures/Client'
 import { Command } from '@/structures/Command'
 import data from 'data.json'
-import type { Message, TextChannel } from 'discord.js'
+import type { Message, TextChannel, User } from 'discord.js'
 import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js'
 import { getRegExp } from 'korean-regexp'
 
@@ -24,6 +24,7 @@ export interface PokemonProvider {
   etc?: Partial<{
     showForm: boolean
     isButton: boolean
+    requester: User
     [key: string]: unknown
   }>
 }
@@ -118,10 +119,10 @@ class PokemonSearchDev extends Command {
           .setColor(Palette.ErrorLike)
           .setDescription(
             ':loudspeaker: 이런! 포켓몬을 찾을 수 없었어요.\n' +
-              '대신 비슷한 이름의 포켓몬을 찾았네요.' +
-              '```fix\n' +
-              relatedMatches.join(', ') +
-              '\n```'
+            '대신 비슷한 이름의 포켓몬을 찾았네요.' +
+            '```fix\n' +
+            relatedMatches.join(', ') +
+            '\n```'
           )
       else
         messageEmbed
@@ -132,6 +133,7 @@ class PokemonSearchDev extends Command {
       return
     }
 
+    const isIzunaOnline = this.message.guild?.id === '471737560524390420'
     this.provider.species = EnumSpecies.getFromName(this.provider.name)!
 
     // Get baseStats
@@ -200,106 +202,136 @@ class PokemonSearchDev extends Command {
 
     // ########## Spawn Towns ##########
     const spawnTowns = new Set<string>()
-    spawnBiomes.forEach(biome => {
-      if (
-        biome === 'Mesa' ||
-        biome === 'Mesa (Bryce)' ||
-        biome === 'Mesa Plateau' ||
-        biome === 'Mesa Plateau F M'
-      )
-        spawnTowns.add('도암단구')
-      if (
-        biome === 'Plains' ||
-        biome === 'Sunflower Plains' ||
-        biome === 'Extreme Hills' ||
-        biome === 'Extreme Hills+' ||
-        biome === 'Extreme Hills Edge'
-      )
-        spawnTowns.add('국화정원')
-      if (
-        biome === 'Savanna' ||
-        biome === 'Savanna M' ||
-        biome === 'Savanna Plateau' ||
-        biome === 'Savanna Plateau M' ||
-        biome === 'Beach'
-      )
-        spawnTowns.add('대초원')
-      if (
-        biome === 'Ice Plains' ||
-        biome === 'Ice Plains Spikes' ||
-        biome === 'Ice Mountains' ||
-        biome === 'FrozenRiver' ||
-        biome === 'FrozenOcean'
-      )
-        spawnTowns.add('눈어름 빙해')
-      if (
-        biome === 'Roofed Forest' ||
-        biome === 'Roofed Forest M' ||
-        biome === 'ForestHills' ||
-        biome === 'Extreme Hills' ||
-        biome === 'Extreme Hills+' ||
-        biome === 'Extreme Hills Edge'
-      )
-        spawnTowns.add('하늘나무 원생림')
-      if (biome === 'Swampland' || biome === 'Swampland M')
-        spawnTowns.add('미궁수렁섬')
-      if (biome === 'Desert' || biome === 'Desert M' || biome === 'DesertHills')
-        spawnTowns.add('마른바람사원')
-      if (
-        biome === 'Taiga' ||
-        biome === 'Taiga M' ||
-        biome === 'TaigaHills' ||
-        biome === 'Mega Taiga' ||
-        biome === 'Mega Spruce Taiga' ||
-        biome === 'Cold Taiga' ||
-        biome === 'Cold Taiga Hills'
-      )
-        spawnTowns.add('바늘잎 골짜기')
-      if (
-        biome === 'Jungle' ||
-        biome === 'Jungle M' ||
-        biome === 'JungleEdge' ||
-        biome === 'JungleEdge M' ||
-        biome === 'JungleHills' ||
-        biome === 'JungleHills M'
-      )
-        spawnTowns.add('나루밀림')
-      if (biome === 'Birch Forest M' || biome === 'Birch Forest Hills M')
-        spawnTowns.add('은행나무 산책길')
-      if (
-        biome === 'Birch Forest' ||
-        biome === 'Birch Forest Hills' ||
-        biome === 'Birch Forest Hills M'
-      )
-        spawnTowns.add('단풍옛길')
-      if (biome === 'Birch Forest' || biome === 'Birch Forest Hills')
-        spawnTowns.add('백담험로')
-      if (biome === 'Hell') spawnTowns.add('꽃불화산섬')
-      if (
-        biome === 'Plains' ||
-        biome === 'Forest' ||
-        biome === 'Flower Forest' ||
-        biome === 'Roofed Forest' ||
-        biome === 'Roofed Forest M'
-      )
-        spawnTowns.add('뚱보협곡')
-      if (
-        biome === 'Plains' ||
-        biome === 'Flower Forest' ||
-        biome === 'Extreme Hills' ||
-        biome === 'Extreme Hills Edge'
-      )
-        spawnTowns.add('유리꽃 총림')
-      if (
-        biome === 'MushroomIsland' ||
-        biome === 'MushroomIslandShore' ||
-        biome === 'Swampland' ||
-        biome === 'Swampland M'
-      )
-        spawnTowns.add('버섯나무 해안가')
-    })
+    if (isIzunaOnline)
+      spawnBiomes.forEach(biome => {
+        if (
+          biome === 'Mesa' ||
+          biome === 'Mesa (Bryce)' ||
+          biome === 'Mesa Plateau' ||
+          biome === 'Mesa Plateau F M'
+        )
+          spawnTowns.add('도암단구')
+        if (
+          biome === 'Plains' ||
+          biome === 'Sunflower Plains' ||
+          biome === 'Extreme Hills' ||
+          biome === 'Extreme Hills+' ||
+          biome === 'Extreme Hills Edge'
+        )
+          spawnTowns.add('국화정원')
+        if (
+          biome === 'Savanna' ||
+          biome === 'Savanna M' ||
+          biome === 'Savanna Plateau' ||
+          biome === 'Savanna Plateau M' ||
+          biome === 'Beach'
+        )
+          spawnTowns.add('대초원')
+        if (
+          biome === 'Ice Plains' ||
+          biome === 'Ice Plains Spikes' ||
+          biome === 'Ice Mountains' ||
+          biome === 'FrozenRiver' ||
+          biome === 'FrozenOcean'
+        )
+          spawnTowns.add('눈어름 빙해')
+        if (
+          biome === 'Roofed Forest' ||
+          biome === 'Roofed Forest M' ||
+          biome === 'ForestHills' ||
+          biome === 'Extreme Hills' ||
+          biome === 'Extreme Hills+' ||
+          biome === 'Extreme Hills Edge'
+        )
+          spawnTowns.add('하늘나무 원생림')
+        if (biome === 'Swampland' || biome === 'Swampland M')
+          spawnTowns.add('미궁수렁섬')
+        if (biome === 'Desert' || biome === 'Desert M' || biome === 'DesertHills')
+          spawnTowns.add('마른바람사원')
+        if (
+          biome === 'Taiga' ||
+          biome === 'Taiga M' ||
+          biome === 'TaigaHills' ||
+          biome === 'Mega Taiga' ||
+          biome === 'Mega Spruce Taiga' ||
+          biome === 'Cold Taiga' ||
+          biome === 'Cold Taiga Hills'
+        )
+          spawnTowns.add('바늘잎 골짜기')
+        if (
+          biome === 'Jungle' ||
+          biome === 'Jungle M' ||
+          biome === 'JungleEdge' ||
+          biome === 'JungleEdge M' ||
+          biome === 'JungleHills' ||
+          biome === 'JungleHills M'
+        )
+          spawnTowns.add('나루밀림')
+        if (biome === 'Birch Forest M' || biome === 'Birch Forest Hills M')
+          spawnTowns.add('은행나무 산책길')
+        if (
+          biome === 'Birch Forest' ||
+          biome === 'Birch Forest Hills' ||
+          biome === 'Birch Forest Hills M'
+        )
+          spawnTowns.add('단풍옛길')
+        if (biome === 'Birch Forest' || biome === 'Birch Forest Hills')
+          spawnTowns.add('백담험로')
+        if (biome === 'Hell') spawnTowns.add('꽃불화산섬')
+        if (
+          biome === 'Plains' ||
+          biome === 'Forest' ||
+          biome === 'Flower Forest' ||
+          biome === 'Roofed Forest' ||
+          biome === 'Roofed Forest M'
+        )
+          spawnTowns.add('뚱보협곡')
+        if (
+          biome === 'Plains' ||
+          biome === 'Flower Forest' ||
+          biome === 'Extreme Hills' ||
+          biome === 'Extreme Hills Edge'
+        )
+          spawnTowns.add('유리꽃 총림')
+        if (
+          biome === 'MushroomIsland' ||
+          biome === 'MushroomIslandShore' ||
+          biome === 'Swampland' ||
+          biome === 'Swampland M'
+        )
+          spawnTowns.add('버섯나무 해안가')
+      })
 
     if (spawnTowns.size === 0) spawnTowns.add('출몰 정보 없음')
+
+    // ########## Spawn Metadata ##########
+    const spawnMetadatas = [] as Array<string>
+    if (spawnInfo?.condition?.minX)
+      spawnMetadatas.push(`X ${spawnInfo?.condition?.minX} 이상`)
+    if (spawnInfo?.condition?.minY)
+      spawnMetadatas.push(`Y ${spawnInfo?.condition?.minY} 이상`)
+    if (spawnInfo?.condition?.minZ)
+      spawnMetadatas.push(`Z ${spawnInfo?.condition?.minZ} 이상`)
+    if (spawnInfo?.condition?.maxX)
+      spawnMetadatas.push(`X ${spawnInfo?.condition?.maxX} 이하`)
+    if (spawnInfo?.condition?.maxY)
+      spawnMetadatas.push(`Y ${spawnInfo?.condition?.maxY} 이하`)
+    if (spawnInfo?.condition?.maxZ)
+      spawnMetadatas.push(`Z ${spawnInfo?.condition?.maxZ} 이하`)
+    if (spawnInfo?.condition.weathers)
+      switch (true) {
+        case spawnInfo?.condition.weathers.some(weather => weather === 'CLEAR'):
+          spawnMetadatas.push('쾌청한 날')
+          break
+        case spawnInfo?.condition.weathers.some(weather => weather === 'RAIN'):
+          spawnMetadatas.push('궂은 날')
+          break
+        case spawnInfo?.condition.weathers.some(weather => weather === 'STORM'):
+          spawnMetadatas.push('태풍이 부는 날')
+          break
+        default:
+          break
+      }
 
     // ########## Stats ##########
     const { HP, Attack, Defence, SpecialAttack, SpecialDefence, Speed } =
@@ -332,9 +364,9 @@ class PokemonSearchDev extends Command {
       .setColor(Palette.LightBlue)
       .setAuthor(
         `이즈나 도감 - ${this.provider.species.getLocalizedName()}` +
-          `(#${this.provider.species.getNationalPokedexNumber()})`,
+        `(#${this.provider.species.getNationalPokedexNumber()})`,
         'https://teamblank.kr/poke/sprites/pokemon/' +
-          `${this.provider.species.getNationalPokedexNumber()}.png`
+        `${this.provider.species.getNationalPokedexNumber()}.png`
       )
       .setDescription(
         (data[
@@ -344,7 +376,7 @@ class PokemonSearchDev extends Command {
       .addField(
         ':crossed_swords: 타입',
         baseStats?.types.map(type => data[`type.${type}`]).join(', ') ??
-          '정보 없음',
+        '정보 없음',
         true
       )
       .addField(
@@ -366,53 +398,70 @@ class PokemonSearchDev extends Command {
           .join(', ') ?? '정보 없음',
         true
       )
-      .addField('\u200b', '\u200b', true)
-      .addField(
-        ':egg: 알 그룹',
-        baseStats?.eggGroups
-          ?.map(eggGroup => data[`egg.${eggGroup}`])
-          .join(', ') ?? '정보 없음',
+
+    if (isIzunaOnline)
+      messageEmbed.addField(
+        ':crystal_ball: 포획률',
+        String(baseStats?.catchRate) ?? '정보 없음',
         true
       )
+    else
+      messageEmbed.addField('\u200b', '\u200b', true)
+    messageEmbed.addField(
+      ':egg: 알 그룹',
+      baseStats?.eggGroups
+        ?.map(eggGroup => data[`egg.${eggGroup}`])
+        .join(', ') ?? '정보 없음',
+      true
+    )
       .addField(
         ':hatching_chick: 부화 걸음 수',
         String(((baseStats?.eggCycles || NaN) + 1) * 255) || '정보 없음',
         true
       )
-      .addField(
+    if (isIzunaOnline)
+      if (spawnMetadatas.length > 0)
+        messageEmbed.addField(':star2: 기타 출몰 정보', spawnMetadatas.join(' / '), true)
+      else
+        messageEmbed.addField('\u200b', '\u200b', true)
+    else
+      messageEmbed.addField(
         ':crystal_ball: 포획률',
         String(baseStats?.catchRate) ?? '정보 없음',
         true
       )
-      .addField(
-        ':hourglass: 출몰 시간',
-        spawnTimes?.join(', ') ?? '출몰 정보 없음',
-        true
-      )
+    messageEmbed.addField(
+      ':hourglass: 출몰 시간',
+      spawnTimes?.join(', ') ?? '출몰 정보 없음',
+      true
+    )
       .addField(
         ':mushroom: 출몰 바이옴',
         spawnBiomes?.join(', ') ?? '출몰 정보 없음',
         isInlineEmbededBlock
       )
 
-    if (this.message.guild?.id === '471737560524390420')
+    if (isIzunaOnline)
       messageEmbed.addField(
         ':house_with_garden: 출몰 마을',
         Array.from(spawnTowns).join(', ') ?? '출몰 정보 없음',
         isInlineEmbededBlock
       )
-    else if (isInlineEmbededBlock)
-      messageEmbed.addField('\u200b', '\u200b', true)
+    else
+      if (spawnMetadatas.length > 0)
+        messageEmbed.addField(':star2: 기타 출몰 정보', spawnMetadatas.join(' '), true)
+      else if (isInlineEmbededBlock)
+        messageEmbed.addField('\u200b', '\u200b', true)
 
     messageEmbed.addField(
       ':hibiscus: 종족치',
       '```ahk\n' +
-        `+-------------------------+-------+\n` +
-        `|  HP Atk Def SpA SpD Spe | Total |\n` +
-        `+-------------------------+-------+\n` +
-        `| ${stats} | ${totalStats}  |\n` +
-        `+-------------------------+-------+\n` +
-        '\n```'
+      `+-------------------------+-------+\n` +
+      `|  HP Atk Def SpA SpD Spe | Total |\n` +
+      `+-------------------------+-------+\n` +
+      `| ${stats} | ${totalStats}  |\n` +
+      `+-------------------------+-------+\n` +
+      '\n```'
     )
 
     const component = new MessageActionRow()
@@ -485,27 +534,39 @@ class PokemonSearchDev extends Command {
           .setDisabled(true)
       ])
 
+    let footerMessage: string
+    if (this.provider.etc?.isButton) {
+      // const repliedMessage = await this.message.channel.messages.fetch(this.message.reference!.messageID!)
+      footerMessage = `Requested by ${this.provider.etc?.requester!.tag}<${this.provider.etc?.requester!.id}>`
+    }
+    else
+      footerMessage = `Requested by ${this.message.author.tag}<${this.message.author.id}>`
     if (shouldHintAboutHiddenAbility)
-      messageEmbed.setFooter('*는 숨겨진 특성을 지표해요.')
+      footerMessage += '\n*는 숨겨진 특성을 지표해요.'
+    messageEmbed.setFooter(footerMessage)
 
     if (this.provider.etc?.isButton || false) {
       messageEmbed.setAuthor(
-        `이즈나 도감 - ${
-          this.provider.formName
-            ? this.resolveFormName(this.provider.formName) + ' '
-            : ''
+        `이즈나 도감 - ${this.provider.formName
+          ? this.resolveFormName(this.provider.formName) + ' '
+          : ''
         }${this.provider.species.getLocalizedName()}` +
-          `(#${this.provider.species.getNationalPokedexNumber()})`,
+        `(#${this.provider.species.getNationalPokedexNumber()})`,
         'https://teamblank.kr/poke/sprites/pokemon/' +
-          `${this.provider.species.getNationalPokedexNumber()}${
-            this.provider.formName
-              ? '-' + this.provider.formName.toLowerCase()
-              : ''
-          }.png`
+        `${this.provider.species.getNationalPokedexNumber()}${this.provider.formName
+          ? '-' + this.provider.formName.toLowerCase()
+          : ''
+        }.png`
       )
     }
 
-    await this.message.reply(null, {
+    console.log(messageEmbed.toJSON())
+    let target: Message
+    if (this.message.reference?.messageID)
+      target = await this.message.channel.messages.fetch(this.message.reference.messageID)
+    else target = this.message
+
+    await target.reply(null, {
       embed: messageEmbed,
       // .setThumbnail(
       //   'https://teamblank.kr/poke/sprites/pokemon/' +
