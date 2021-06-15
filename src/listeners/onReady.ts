@@ -163,13 +163,13 @@ export default (client: Client): ReturnType<Listener> => {
         const embed = new MessageEmbed()
           .setColor(Palette.Crimson)
           .setAuthor(message.author.tag, message.author.avatarURL() as string)
-          .setDescription('> ```fix\n' + `> ${message.cleanContent.replace(/\n/g, '\n> ')}` + '\n> ```')
+          .setDescription('> ```fix\n' + `> ${message.content.replace(/\n/g, '\n> ')}` + '\n> ```')
           .setFooter(`UserID : ${message.author.id} · GuildInfo : ${message.guild!.name} <${message.guild!.id}>`,)
 
-        await channel
-          .send(embed)
-          .finally(() => CACHE.splice(CACHE.indexOf(message)))
+        await channel.send(embed)
       }
+
+      CACHE.splice(0, CACHE.length)
     }
     else client.clearInterval(flushTimeout)
   }
@@ -177,7 +177,7 @@ export default (client: Client): ReturnType<Listener> => {
   client.incrementMaxListener(2)
   client.on(CLIENT_READY, onReady)
   client.on(MESSAGE_CREATE, handleMessage)
-  const flushTimeout = client.setInterval(flushCachedMessage, 5000)
+  const flushTimeout = client.setInterval(flushCachedMessage, 2000)
 
   return () => {
     client.off(CLIENT_READY, onReady)
