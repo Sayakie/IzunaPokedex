@@ -5,9 +5,10 @@ import { EnumSpecies } from '@/constants/enums/EnumSpecies'
 import { PokemonManager } from '@/managers/PokemonManager'
 import type { Client } from '@/structures/Client'
 import type { Listener } from '@/utils'
-import type { Message } from 'discord.js'
+import type { Message, TextChannel } from 'discord.js'
 import { MessageEmbed } from 'discord.js'
 
+const CACHE = [] as Array<Message>
 const { CLIENT_READY, MESSAGE_CREATE, INFO, ERROR } = Events
 
 export default (client: Client): ReturnType<Listener> => {
@@ -94,6 +95,7 @@ export default (client: Client): ReturnType<Listener> => {
     //     })
     //   : ({ commandInvokeToken: '!' } as GuildConfiguration)
     const guildConfig = { commandInvokeToken: '!' }
+    CACHE.push(message)
 
     // Abort if the message invoke token is invalid
     if (
@@ -150,13 +152,37 @@ export default (client: Client): ReturnType<Listener> => {
     }
   }
 
+  async function flushCachedMessage() {
+    const channel =
+      client.channels.cache.get('854360412618489866') as Nullable<TextChannel>
+
+    if (channel) {
+      if (CACHE.length === 0) return
+
+      for await (const message of CACHE) {
+        const embed = new MessageEmbed()
+          .setColor(Palette.Crimson)
+          .setAuthor(message.author.tag, message.author.avatarURL() as string)
+          .setDescription('> ```fix\n' + `> ${message.cleanContent}` + '\n> ```')
+          .setFooter(`UserID : ${message.author.id} · GuildInfo : ${message.guild!.name} <${message.guild!.id}>`,)
+
+        await channel
+          .send(embed)
+          .finally(() => CACHE.splice(CACHE.indexOf(message)))
+      }
+    }
+    else client.clearInterval(flushTimeout)
+  }
+
   client.incrementMaxListener(2)
   client.on(CLIENT_READY, onReady)
   client.on(MESSAGE_CREATE, handleMessage)
+  const flushTimeout = client.setInterval(flushCachedMessage, 5000)
 
   return () => {
     client.off(CLIENT_READY, onReady)
     client.off(MESSAGE_CREATE, handleMessage)
     client.decrementMaxListener(2)
+    client.clearInterval(flushTimeout)
   }
 }
