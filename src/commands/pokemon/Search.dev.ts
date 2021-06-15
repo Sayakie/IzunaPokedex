@@ -12,9 +12,13 @@ import { getPhonemes, getRegExp } from 'korean-regexp'
 export type resolvableForm =
   | 'MEGA'
   | `MEGA-${'X' | 'Y'}`
+  | 'GMAX'
   | 'ALOLA'
   | 'GALAR'
   | 'ASH'
+  | 'NECROZMA_DAWN'
+  | 'NECROZMA_DUSK'
+  | 'NECROZMA_ULTRA'
 
 export interface PokemonProvider {
   name: string
@@ -48,12 +52,20 @@ class PokemonSearchDev extends Command {
         return '메가 X'
       case 'MEGA-Y':
         return '메가 Y'
+      case 'GMAX':
+        return '거다이맥스'
       case 'ALOLA':
         return '알로라'
       case 'GALAR':
         return '가라르'
       case 'ASH':
         return '지우'
+      case 'NECROZMA_DAWN':
+        return '황혼의 갈기'
+      case 'NECROZMA_DUSK':
+        return '새벽의 날개'
+      case 'NECROZMA_ULTRA':
+        return '울트라'
       default:
         return ''
     }
@@ -65,6 +77,7 @@ class PokemonSearchDev extends Command {
     this.provide({
       name: this.argument.asArray.join(' '),
       form: 0,
+      formName: undefined,
       species: null as unknown as EnumSpecies,
       etc: {
         showForm: true
@@ -375,20 +388,14 @@ class PokemonSearchDev extends Command {
       drop =>
         drop.pokemon.toLowerCase() === this.provider.species.name.toLowerCase()
     )
-    let shouldHintAboutHiddenAbility = false
+    // const shouldHintAboutHiddenAbility = false
 
     // ###
     // ### PART: Factory of MessageEmbed
     // ###
     // ####################################################
-    const messageEmbed = new MessageEmbed()
+    const embed = new MessageEmbed()
       .setColor(Palette.LightBlue)
-      .setAuthor(
-        `이즈나 도감 - ${this.provider.species.getLocalizedName()}` +
-        `(#${this.provider.species.getNationalPokedexNumber()})`,
-        'https://teamblank.kr/poke/sprites/pokemon/' +
-        `${this.provider.species.getNationalPokedexNumber()}.png`
-      )
       .setDescription(
         (data[
           `pixelmon.${this.provider.species.name.toLowerCase()}.description`
@@ -403,78 +410,67 @@ class PokemonSearchDev extends Command {
       .addField(
         ':shield: 특성',
         baseStats?.abilities
-          .map(ability =>
-            ability != null
-              ? data[`ability.${ability.replace(/\s/g, '')}.name`]
-              : null
-          )
-          .map((ability, i) => {
-            if (i == 2 && ability != null) {
-              ability = `${ability}\*`
-              shouldHintAboutHiddenAbility = true
-            }
-            return ability == null ? null : ability
+          .map((ability, index) => {
+            if (ability === null) return null
+
+            let translatedAbilityName =
+              data[`ability.${ability!.replace(/\s/g, '')}.name`] as string
+
+            if (index == 2)
+              translatedAbilityName = `**\`${translatedAbilityName}\`**`
+
+            return translatedAbilityName
           })
           .filter(Boolean)
           .join(', ') ?? '정보 없음',
         true
       )
-
-    if (isIzunaOnline)
-      messageEmbed.addField(
-        ':crystal_ball: 포획률',
-        String(baseStats?.catchRate) ?? '정보 없음',
+      .addField('\u200b', '\u200b', true)
+      .addField(
+        ':egg: 알 그룹',
+        baseStats?.eggGroups
+          ?.map(eggGroup => data[`egg.${eggGroup}`])
+          .join(', ') ?? '정보 없음',
         true
       )
-    else
-      messageEmbed.addField('\u200b', '\u200b', true)
-    messageEmbed.addField(
-      ':egg: 알 그룹',
-      baseStats?.eggGroups
-        ?.map(eggGroup => data[`egg.${eggGroup}`])
-        .join(', ') ?? '정보 없음',
-      true
-    )
       .addField(
         ':hatching_chick: 부화 걸음 수',
         String(((baseStats?.eggCycles || NaN) + 1) * 255) || '정보 없음',
         true
       )
-    if (isIzunaOnline)
-      if (spawnMetadatas.length > 0)
-        messageEmbed.addField(':star2: 기타 출몰 정보', spawnMetadatas.join(' / '), true)
-      else
-        messageEmbed.addField('\u200b', '\u200b', true)
-    else
-      messageEmbed.addField(
+      .addField(
         ':crystal_ball: 포획률',
         String(baseStats?.catchRate) ?? '정보 없음',
         true
       )
-    messageEmbed.addField(
-      ':hourglass: 출몰 시간',
-      spawnTimes?.join(', ') ?? '출몰 정보 없음',
-      true
-    )
+      .addField(
+        ':watch: 출몰 시간',
+        spawnTimes?.join(', ') ?? '출몰 정보 없음',
+        isInlineEmbededBlock
+      )
       .addField(
         ':mushroom: 출몰 바이옴',
         spawnBiomes?.join(', ') ?? '출몰 정보 없음',
         isInlineEmbededBlock
       )
-
     if (isIzunaOnline)
-      messageEmbed.addField(
+      embed.addField(
         ':house_with_garden: 출몰 마을',
         Array.from(spawnTowns).join(', ') ?? '출몰 정보 없음',
         isInlineEmbededBlock
       )
-    else
-      if (spawnMetadatas.length > 0)
-        messageEmbed.addField(':star2: 기타 출몰 정보', spawnMetadatas.join(' '), true)
-      else if (isInlineEmbededBlock)
-        messageEmbed.addField('\u200b', '\u200b', true)
+    else if (isInlineEmbededBlock)
+      embed.addField('\u200b', '\u200b', true)
 
-    messageEmbed.addField(
+    if (spawnMetadatas.length > 0)
+      embed.addField(
+        ':robot: 출몰 추가 조건',
+        '```fix\n' +
+        spawnMetadatas.join(' / ') +
+        '\n```'
+      )
+
+    embed.addField(
       ':hibiscus: 종족치',
       '```ahk\n' +
       `+-------------------------+-------+\n` +
@@ -484,6 +480,110 @@ class PokemonSearchDev extends Command {
       `+-------------------------+-------+\n` +
       '\n```'
     )
+
+    // const messageEmbed = new MessageEmbed()
+    //   .setColor(Palette.LightBlue)
+    //   // .setAuthor(
+    //   //   `이즈나 도감 - ${this.provider.species.getLocalizedName()}` +
+    //   //   `(#${this.provider.species.getNationalPokedexNumber()})`,
+    //   //   'https://teamblank.kr/poke/sprites/pokemon/' +
+    //   //   `${this.provider.species.getNationalPokedexNumber()}.png`
+    //   // )
+    //   .setDescription(
+    //     (data[
+    //       `pixelmon.${this.provider.species.name.toLowerCase()}.description`
+    //     ] as string) + '\n\u200b'
+    //   )
+    //   .addField(
+    //     ':crossed_swords: 타입',
+    //     baseStats?.types.map(type => data[`type.${type}`]).join(', ') ??
+    //     '정보 없음',
+    //     true
+    //   )
+    //   .addField(
+    //     ':shield: 특성',
+    //     baseStats?.abilities
+    //       .map(ability =>
+    //         ability != null
+    //           ? data[`ability.${ability.replace(/\s/g, '')}.name`]
+    //           : null
+    //       )
+    //       .map((ability, i) => {
+    //         if (i == 2 && ability != null) {
+    //           ability = `${ability}\*`
+    //           shouldHintAboutHiddenAbility = true
+    //         }
+    //         return ability == null ? null : ability
+    //       })
+    //       .filter(Boolean)
+    //       .join(', ') ?? '정보 없음',
+    //     true
+    //   )
+
+    // if (isIzunaOnline)
+    //   messageEmbed.addField(
+    //     ':crystal_ball: 포획률',
+    //     String(baseStats?.catchRate) ?? '정보 없음',
+    //     true
+    //   )
+    // else
+    //   messageEmbed.addField('\u200b', '\u200b', true)
+    // messageEmbed.addField(
+    //   ':egg: 알 그룹',
+    //   baseStats?.eggGroups
+    //     ?.map(eggGroup => data[`egg.${eggGroup}`])
+    //     .join(', ') ?? '정보 없음',
+    //   true
+    // )
+    //   .addField(
+    //     ':hatching_chick: 부화 걸음 수',
+    //     String(((baseStats?.eggCycles || NaN) + 1) * 255) || '정보 없음',
+    //     true
+    //   )
+    // if (isIzunaOnline)
+    //   if (spawnMetadatas.length > 0)
+    //     messageEmbed.addField(':star2: 기타 출몰 정보', spawnMetadatas.join(' / '), true)
+    //   else
+    //     messageEmbed.addField('\u200b', '\u200b', true)
+    // else
+    //   messageEmbed.addField(
+    //     ':crystal_ball: 포획률',
+    //     String(baseStats?.catchRate) ?? '정보 없음',
+    //     true
+    //   )
+    // messageEmbed.addField(
+    //   ':hourglass: 출몰 시간',
+    //   spawnTimes?.join(', ') ?? '출몰 정보 없음',
+    //   true
+    // )
+    //   .addField(
+    //     ':mushroom: 출몰 바이옴',
+    //     spawnBiomes?.join(', ') ?? '출몰 정보 없음',
+    //     isInlineEmbededBlock
+    //   )
+
+    // if (isIzunaOnline)
+    //   messageEmbed.addField(
+    //     ':house_with_garden: 출몰 마을',
+    //     Array.from(spawnTowns).join(', ') ?? '출몰 정보 없음',
+    //     isInlineEmbededBlock
+    //   )
+    // else
+    //   if (spawnMetadatas.length > 0)
+    //     messageEmbed.addField(':star2: 기타 출몰 정보', spawnMetadatas.join(' '), true)
+    //   else if (isInlineEmbededBlock)
+    //     messageEmbed.addField('\u200b', '\u200b', true)
+
+    // messageEmbed.addField(
+    //   ':hibiscus: 종족치',
+    //   '```ahk\n' +
+    //   `+-------------------------+-------+\n` +
+    //   `|  HP Atk Def SpA SpD Spe | Total |\n` +
+    //   `+-------------------------+-------+\n` +
+    //   `| ${stats} | ${totalStats}  |\n` +
+    //   `+-------------------------+-------+\n` +
+    //   '\n```'
+    // )
 
     const component = new MessageActionRow()
     const components = [component]
@@ -515,6 +615,16 @@ class PokemonSearchDev extends Command {
             )
         ])
 
+      if (EnumForm.DynamaxPokemons.includes(this.provider.species))
+        component.addComponents([
+          new MessageButton()
+            .setStyle('PRIMARY')
+            .setLabel('거다이맥스폼')
+            .setCustomID(
+              `FORM:${this.provider.species.name.toUpperCase()}:0:GMAX`
+            )
+        ])
+
       if (EnumForm.AlolanPokemons.includes(this.provider.species))
         component.addComponents([
           new MessageButton()
@@ -535,15 +645,27 @@ class PokemonSearchDev extends Command {
             )
         ])
 
-      if (this.provider.species.getLocalizedName() === '개굴닌자')
-        component.addComponents([
-          new MessageButton()
-            .setStyle('SUCCESS')
-            .setLabel('지우개굴닌자')
-            .setCustomID(
-              `FORM:${this.provider.species.name.toUpperCase()}:2:ASH`
-            )
-        ])
+      switch (this.provider.species.getLocalizedName()) {
+        case '개굴닌자':
+          component.addComponents([
+            new MessageButton()
+              .setStyle('SUCCESS')
+              .setLabel('지우개굴닌자')
+              .setCustomID(
+                `FORM:${this.provider.species.name.toUpperCase()}:2:ASH`
+              )
+          ])
+          break
+        case '네크로즈마':
+          component.addComponents([
+            new MessageButton().setStyle('SUCCESS').setLabel('새벽의 날개').setCustomID(`FORM:${this.provider.species.name.toUpperCase()}:1:NECROZMA_DUSK`),
+            new MessageButton().setStyle('SUCCESS').setLabel('황혼의 갈기').setCustomID(`FORM:${this.provider.species.name.toUpperCase()}:2:NECROZMA_DAWN`),
+            new MessageButton().setStyle('PRIMARY').setLabel('울트라 네크로즈마').setCustomID(`FORM:${this.provider.species.name.toUpperCase()}:3:NECROZMA_ULTRA`)
+          ])
+          break
+        default:
+          break
+      }
     }
 
     if (hasDroppableItems)
@@ -556,42 +678,51 @@ class PokemonSearchDev extends Command {
       ])
 
     let footerMessage: string
+    let requesterID: string
     if (this.provider.etc?.isButton) {
       // const repliedMessage = await this.message.channel.messages.fetch(this.message.reference!.messageID!)
-      footerMessage = `Requested by ${this.provider.etc?.requester!.tag}<${this.provider.etc?.requester!.id}>`
+      requesterID = this.provider.etc?.requester!.id
+      footerMessage = `Requested by ${this.provider.etc?.requester!.tag}<${requesterID}>`
     }
-    else
-      footerMessage = `Requested by ${this.message.author.tag}<${this.message.author.id}>`
-    if (shouldHintAboutHiddenAbility)
-      footerMessage += '\n*는 숨겨진 특성을 지표해요.'
-    messageEmbed.setFooter(footerMessage)
+    else {
+      requesterID = this.message.author.id
+      footerMessage = `Requested by ${this.message.author.tag}<${requesterID}>`
+    }
 
-    if (this.provider.etc?.isButton || false) {
-      messageEmbed.setAuthor(
-        `이즈나 도감 - ${this.provider.formName
-          ? this.resolveFormName(this.provider.formName) + ' '
-          : ''
-        }${this.provider.species.getLocalizedName()}` +
-        `(#${this.provider.species.getNationalPokedexNumber()})`,
-        'https://teamblank.kr/poke/sprites/pokemon/' +
-        `${this.provider.species.getNationalPokedexNumber()}${this.provider.formName
-          ? '-' + this.provider.formName.toLowerCase()
-          : ''
-        }.png`
+    const PokedexName = isIzunaOnline ? '이즈나' : '전국'
+    const PokemonPrefixName =
+      this.provider.formName
+        ? this.resolveFormName(this.provider.formName) + ' '
+        : ''
+    const PokemonName = this.provider.species.getLocalizedName()
+    const PokedexNumber = this.provider.species.getNationalPokedexNumber()
+    let PokemonSpriteSuffix =
+      EnumForm.AlolanPokemons.includes(this.provider.species) ||
+        EnumForm.GalarianPokemons.includes(this.provider.species) ? '-normal' : ''
+    PokemonSpriteSuffix =
+      this.provider.formName
+        ? `-${this.provider.formName}`
+        : PokemonSpriteSuffix
+    embed
+      .setAuthor(
+        `${PokedexName} 도감 - ` + PokemonPrefixName + PokemonName + `(#${PokedexNumber})`,
+        `https://teamblank.kr/pixelmon-820/sprites/pokemon/${PokedexNumber}${PokemonSpriteSuffix}.png`
       )
-    }
-
-    let target: Message
-    if (this.message.reference?.messageID)
-      target = await this.message.channel.messages.fetch(this.message.reference.messageID)
-    else target = this.message
-
-    await target.channel.send(null, {
-      embed: messageEmbed,
-      // .setThumbnail(
-      //   'https://teamblank.kr/poke/sprites/pokemon/' +
-      //     `${this.provider.species.getNationalPokedexNumber()}.png`
+      // .setImage(
+      //   'https://data1.pokemonkorea.co.kr/newdata/pokedex/full/' +
+      //   `0${PokedexNumber}0${this.provider.form + 1}.png`
       // )
+      .setFooter(footerMessage)
+
+    // let target: Message
+    // if (this.message.reference?.messageID)
+    //   target = await this.message.channel.messages.fetch(this.message.reference.messageID)
+    // else target = this.message
+
+    await this.message.channel.send(null, {
+      content: `<@${requesterID}>`,
+      allowedMentions: { users: [] },
+      embed,
       components
     })
   }

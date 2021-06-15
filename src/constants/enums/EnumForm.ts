@@ -33,10 +33,11 @@ type SpeciesForm = {
 }
 
 export class EnumForm {
-  public static formList: Map<EnumSpecies, string> = new Map<
-    EnumSpecies,
-    string
-  >()
+  public static formList: Map<EnumSpecies,
+    string> = new Map<
+      EnumSpecies,
+      string
+    >()
 
   public static Forms = {
     Normal: 'Normal',
@@ -152,6 +153,27 @@ export class EnumForm {
     EnumSpecies.Articuno,
     EnumSpecies.Zapdos
   ]
-}
 
-EnumForm.Forms
+  public static DynamaxPokemons = [
+    EnumSpecies.Butterfree,
+    EnumSpecies.Pikachu,
+    EnumSpecies.Machamp,
+    EnumSpecies.Kingler,
+    EnumSpecies.Lapras,
+    EnumSpecies.Eevee,
+    EnumSpecies.Garbodor,
+    EnumSpecies.Melmetal,
+    EnumSpecies.Corviknight,
+    EnumSpecies.Orbeetle,
+    EnumSpecies.Drednaw,
+    EnumSpecies.Coalossal,
+    EnumSpecies.Flapple,
+    EnumSpecies.Appletun,
+    EnumSpecies.Sandaconda,
+    EnumSpecies.Hatterene,
+    EnumSpecies.Grimmsnarl,
+    EnumSpecies.Copperajah,
+    EnumSpecies.Duraludon,
+    EnumSpecies.Inteleon
+  ]
+}
