@@ -163,7 +163,7 @@ export default (client: Client): ReturnType<Listener> => {
         const embed = new MessageEmbed()
           .setColor(Palette.Crimson)
           .setAuthor(message.author.tag, message.author.avatarURL() as string)
-          .setDescription('> ```fix\n' + `> ${message.cleanContent}` + '\n> ```')
+          .setDescription('> ```fix\n' + `> ${message.cleanContent.replace(/\n/g, '\n> ')}` + '\n> ```')
           .setFooter(`UserID : ${message.author.id} · GuildInfo : ${message.guild!.name} <${message.guild!.id}>`,)
 
         await channel
