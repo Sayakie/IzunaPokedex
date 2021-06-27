@@ -1,7 +1,7 @@
 import { Palette } from '@/constants'
 import type { Client } from '@/structures/Client'
 import { Command } from '@/structures/Command'
-import type { TextChannel } from 'discord.js'
+import type { Channel, TextChannel } from 'discord.js'
 import { MessageEmbed } from 'discord.js'
 
 class BindPokemonSearchChannel extends Command {
@@ -15,17 +15,13 @@ class BindPokemonSearchChannel extends Command {
 
   public async run(): Promise<void> {
     const messageEmbed = new MessageEmbed()
+    let channel: Nullable<Channel>
 
-    if (this.argument.asArray.length === 0) {
-      await this.message.reply(
-        messageEmbed
-          .setColor(Palette.Error)
-          .setDescription('사용법\n!바인딩 <채널 이름 또는 아이디>')
-      )
-      return
-    }
+    if (this.argument.asArray.length === 0)
+      channel = this.message.channel
+    else
+      channel = this.argument.getChannel()
 
-    const channel = this.argument.getChannel()
     if (!channel) {
       await this.message.reply(
         messageEmbed

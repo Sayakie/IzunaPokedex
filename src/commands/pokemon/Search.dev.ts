@@ -674,7 +674,7 @@ class PokemonSearchDev extends Command {
           .setStyle('DANGER')
           .setLabel('파밍 아이템')
           .setCustomID(`DROPITEM:${this.provider.species.name.toLowerCase()}`)
-          .setDisabled(true)
+        // .setDisabled(true)
       ])
 
     let footerMessage: string

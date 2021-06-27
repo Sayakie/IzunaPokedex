@@ -23,7 +23,9 @@ class $DropItem extends Command {
   }
 
   public inject(message: Message, args: Array<string>): this {
-    return super.inject(message, args)
+    super.inject(message, args)
+
+    return this
   }
 
   public provide(provider: PokemonProvider): this {
@@ -68,24 +70,25 @@ class $DropItem extends Command {
         item =>
           data[`item.${item}.name`] ??
           data[
-            `item.${item.replace(/_(.)/, str =>
-              str.substr(1).toUpperCase()
-            )}.name`
+          `item.${item.replace(/_(.)/, str =>
+            str.substr(1).toUpperCase()
+          )}.name`
           ] ??
           item
       )
 
     const messageEmbed = new MessageEmbed()
       .setColor(Palette.LightBlueB)
-      .setDescription(
-        (data[
-          `pixelmon.${this.provider.species.name.toLowerCase()}.description`
-        ] as string) + '\n\u200b'
-      )
+      // .setDescription(
+      //   (data[
+      //     `pixelmon.${this.provider.species.name.toLowerCase()}.description`
+      //   ] as string) + '\n\u200b'
+      // )
       .addField(
         ':headstone: 파밍 아이템',
         '```py\n' + dropItem.join(', ') + '\n```'
       )
+      .setFooter(`Requested by ${this.provider.etc!.requester!.tag}<${this.provider.etc!.requester!.id}>`)
 
     await this.message.channel.send(messageEmbed)
   }

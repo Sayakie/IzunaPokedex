@@ -10,9 +10,7 @@ import type {
   Channel,
   Guild,
   GuildMember,
-  Interaction,
-  Message,
-  User,
+  Interaction, Message, User,
   WebhookClient
 } from 'discord.js'
 
@@ -91,10 +89,11 @@ export default (client: Client): ReturnType<Listener> => {
               name: String(name),
               form: 0,
               species: null as unknown as EnumSpecies,
-              etc: { showForm: false }
+              etc: { showForm: false, requester: interaction.user }
             })
             ?.run()
         )
+        .catch(console.error)
         .finally(async () => interaction.deleteReply())
     else
       await interaction
