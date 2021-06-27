@@ -54,26 +54,26 @@ declare module '@riots/global' {
     declare type PokemonType =
       | 'ha'
       | Capitalize<
-          | 'Normal'
-          | 'Fire'
-          | 'Water'
-          | 'Electric'
-          | 'Grass'
-          | 'Ice'
-          | 'Fighting'
-          | 'Poison'
-          | 'Ground'
-          | 'Flying'
-          | 'Psychic'
-          | 'Bug'
-          | 'Rock'
-          | 'Ghost'
-          | 'Dragon'
-          | 'Dark'
-          | 'Steel'
-          | 'Fairy'
-          | 'Shiny'
-        >
+        | 'Normal'
+        | 'Fire'
+        | 'Water'
+        | 'Electric'
+        | 'Grass'
+        | 'Ice'
+        | 'Fighting'
+        | 'Poison'
+        | 'Ground'
+        | 'Flying'
+        | 'Psychic'
+        | 'Bug'
+        | 'Rock'
+        | 'Ghost'
+        | 'Dragon'
+        | 'Dark'
+        | 'Steel'
+        | 'Fairy'
+        | 'Shiny'
+      >
 
     declare type Stats =
       | 'HP'
@@ -95,7 +95,7 @@ declare module '@riots/global' {
       to: {
         name: string
       }
-      condition: readonly Array<EvolutionCondition>
+      conditions: readonly Array<EvolutionCondition>
       evoType: EvolutionType
       moves?: readonly Array<string>
     }
@@ -107,12 +107,15 @@ declare module '@riots/global' {
         itemID: `pixelmon:${string}` | string
       }
       evoConditionType: 'heldItem'
-    } & {
+    } | {
       friendship: number
       evoConditionType: 'friendship'
-    } & {
+    } | {
       attackIndex: number
       evoConditionType: 'move'
+    } | {
+      genders: readonly Array<'Male' | 'Female'>
+      evoConditionType: 'gender'
     }
 
     declare type EvolutionConditionType = 'heldItem' | 'friendship'

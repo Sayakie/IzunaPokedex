@@ -388,6 +388,7 @@ class PokemonSearchDev extends Command {
       drop =>
         drop.pokemon.toLowerCase() === this.provider.species.name.toLowerCase()
     )
+    const hasEvolution = baseStats?.preEvolutions?.length ?? 0 > 0
     // const shouldHintAboutHiddenAbility = false
 
     // ###
@@ -675,6 +676,13 @@ class PokemonSearchDev extends Command {
           .setLabel('파밍 아이템')
           .setCustomID(`DROPITEM:${this.provider.species.name.toLowerCase()}`)
         // .setDisabled(true)
+      ])
+
+    if (hasEvolution)
+      component.addComponents([
+        new MessageButton().setStyle('SECONDARY')
+          .setLabel('진화 방법')
+          .setCustomID(`EVOLUTION:${this.provider.species.name.toLowerCase()}`)
       ])
 
     let footerMessage: string

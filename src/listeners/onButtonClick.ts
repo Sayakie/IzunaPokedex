@@ -95,6 +95,24 @@ export default (client: Client): ReturnType<Listener> => {
         )
         .catch(console.error)
         .finally(async () => interaction.deleteReply())
+    else if (head === 'EVOLUTION')
+      await interaction
+        .defer(true)
+        .then(async () =>
+          (
+            client.commands.find(({ name }) => name === '__EVOLUTION__') as PokemonDropItemCommand
+          )
+
+            ?.inject?.(interaction.message as Message, [name!])
+            ?.provide?.({
+              name: String(name),
+              form: 0,
+              species: null as unknown as EnumSpecies,
+              etc: { showForm: false, requester: interaction.user }
+            })
+            ?.run()
+        )
+        .finally(async () => interaction.deleteReply())
     else
       await interaction
         .defer(true)

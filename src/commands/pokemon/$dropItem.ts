@@ -65,7 +65,7 @@ class $DropItem extends Command {
     ]
       .filter(Boolean)
       .map(String)
-      .map(item => (item = item.replace(/^\w*(?=:)./, '')))
+      .map(item => item.replace(/^\w*(?=:)./, ''))
       .map(
         item =>
           data[`item.${item}.name`] ??
